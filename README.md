@@ -1,4 +1,7 @@
 # DonutEscape
+
+This repo contains all the code to create the next game:
+
 Roguelike game created in a two weeks Game Jam with Unreal Engine 5. In this game the player is a donut that is trapped in the middle of a dungeon and needs to find a way out.
 
 The game starts in a room and all the rooms around will be randomly generated, meaning that the dungeon will be different every time the game is played. In each room the enemies are also randomly generated every time the player enters unless he kills them all.
