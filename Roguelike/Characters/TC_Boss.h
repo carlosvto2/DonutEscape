@@ -17,7 +17,7 @@ class ROGUELIKE_API ATC_Boss : public ATC_BaseCharacter
 	GENERATED_BODY()
 
 public:
-	ATC_Boss();
+	ATC_Boss(const FObjectInitializer& OI);
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

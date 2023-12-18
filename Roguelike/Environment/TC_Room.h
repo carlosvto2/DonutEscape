@@ -24,7 +24,7 @@ class ROGUELIKE_API ATC_Room : public AActor
 public:	
 
 	/* ROOM SPAWNPOINTS */
-	UPROPERTY(EditDefaultsOnly, Category = "Rooms")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Rooms")
 		USceneComponent* RoomElements;
 	UPROPERTY(EditDefaultsOnly, Category = "RoomSpawnPoint")
 		UTC_SpawnPoint* BottomRoomSpawnPoint;
@@ -100,6 +100,7 @@ public:
 
 	void NoBuffInRoom() { Buff = nullptr; };
 	void NoBossInRoom() { FinalBoss = nullptr; };
+	bool CheckIfBossCanBeInThisRoom() { return BossCanBeInThisRoom; }
 
 protected:
 	// Called when the game starts or when spawned
@@ -116,6 +117,9 @@ private:
 		UMaterialInstance* WindowMaterial;
 	UPROPERTY(EditAnywhere, Category = "Material")
 		UMaterialInstance* WindowMaterialTransparent;
+
+	UPROPERTY(EditAnywhere, Category = "Boss")
+		bool BossCanBeInThisRoom = true;
 
 	TArray<UTC_SpawnPoint*> SpawnPoints;
 	TArray<UTC_DoorCollision*> RoomColliders;

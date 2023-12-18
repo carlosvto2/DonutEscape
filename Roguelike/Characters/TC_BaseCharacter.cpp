@@ -7,12 +7,13 @@
 #include "../Actors/TC_Projectile.h"
 #include "../Actors/Collectables/TC_Collectable.h"
 #include "../ActorComponents/TC_HealthComponent.h"
+#include "../ActorComponents/TC_StatusComponent.h"
 #include "TC_DonutPlayer.h"
 #include "../TC_GameMode.h"
 #include "../Environment/TC_Room.h"
 
 // Sets default values
-ATC_BaseCharacter::ATC_BaseCharacter()
+ATC_BaseCharacter::ATC_BaseCharacter(const FObjectInitializer& OI) : Super(OI)
 {
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
@@ -25,8 +26,12 @@ ATC_BaseCharacter::ATC_BaseCharacter()
 	ProjectileSpawnPoint = CreateDefaultSubobject<USceneComponent>(TEXT("Projectile Spawn Point"));
 	ProjectileSpawnPoint->SetupAttachment(RootComponent);
 
-	// Add health
-	Health = CreateDefaultSubobject<UTC_HealthComponent>(TEXT("Health"));
+	WidgetPosition = CreateDefaultSubobject<USceneComponent>(TEXT("Widget Position"));
+	WidgetPosition->SetupAttachment(RootComponent);
+
+	// Add Health Component
+	Health = OI.CreateDefaultSubobject<UTC_HealthComponent>(this, TEXT("Health"));
+	StatusComponent = OI.CreateDefaultSubobject<UTC_StatusComponent>(this, TEXT("Status Component"));
 }
 
 // Called when the game starts or when spawned
@@ -39,6 +44,15 @@ void ATC_BaseCharacter::BeginPlay()
 	DonutGameMode = Cast<ATC_GameMode>(UGameplayStatics::GetGameMode(this));
 	if (!DonutGameMode)
 		return;
+}
+
+/*
+* Function to get the status component created in blueprint
+*/
+void ATC_BaseCharacter::SetStatusComponent(UTC_StatusComponent* Component)
+{
+	// Set Status Component
+	StatusComponent = Component;
 }
 
 void ATC_BaseCharacter::HandleDestruction()
@@ -68,47 +82,6 @@ void ATC_BaseCharacter::RotateMesh(FVector LookAtTarget)
 
 void ATC_BaseCharacter::Fire()
 {
-	if (!bCanFire || !bCharacterActive || !ProjectileClass)
-		return;
-
-	// Only if character is player
-	ATC_DonutPlayer* DonutPlayer = Cast<ATC_DonutPlayer>(this);
-
-	if (DonutPlayer)
-	{
-		DonutPlayer->IncrementOverheat();
-		// GameMode will handle overheat with widget
-		DonutGameMode->HandlePlayerOverheat();
-	}
-
-	if (!bMultipleShoot)
-	{
-		ATC_Projectile* Projectile = GetWorld()->SpawnActor<ATC_Projectile>(ProjectileClass,
-			ProjectileSpawnPoint->GetComponentLocation(),
-			ProjectileSpawnPoint->GetComponentRotation());
-		// So the projectile know who is the owner
-		Projectile->SetOwner(this);
-	}
-	else
-	{
-		// if the player has the buff to shoot two projectiles
-
-		ATC_Projectile* Projectile = GetWorld()->SpawnActor<ATC_Projectile>(ProjectileClass,
-			ProjectileSpawnPoint->GetComponentLocation(),
-			ProjectileSpawnPoint->GetComponentRotation());
-		Projectile->AddActorLocalOffset(FVector(0.f, 25.f, 0.f));
-		// So the projectile know who is the owner
-		Projectile->SetOwner(this);
-
-		ATC_Projectile* Projectile2 = GetWorld()->SpawnActor<ATC_Projectile>(ProjectileClass,
-			ProjectileSpawnPoint->GetComponentLocation(),
-			ProjectileSpawnPoint->GetComponentRotation());
-		Projectile2->AddActorLocalOffset(FVector(0.f, -25.f, 0.f));
-		// So the projectile know who is the owner
-		Projectile2->SetOwner(this);
-	}
-
-	
 }
 
 void ATC_BaseCharacter::SpawnCollectable()
@@ -130,4 +103,97 @@ void ATC_BaseCharacter::SpawnCollectable()
 
 	GetWorld()->SpawnActor<ATC_Collectable>(Collectables[RandomCollectable], GetActorLocation(), FRotator(0.f, 0.f, 0.f));
 	bCollectableAlreadySpawned = true;
+}
+
+void ATC_BaseCharacter::OnPlayerBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* Other, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	ATC_DonutPlayer* DonutPlayer = Cast<ATC_DonutPlayer>(UGameplayStatics::GetPlayerPawn(this, 0));
+	if (!DonutPlayer)
+		return;
+
+	// if the overlapped actor is the player, activate the enemy
+	if (Other == DonutPlayer)
+	{
+		ActivateEnemy(true);
+	}
+}
+
+
+
+/*
+* IF CHARACTER IS PLAYER - Check the type of projectile and skin and apply side effects to PLAYER
+*/
+void ATC_BaseCharacter::CalculateAmmountOfDamageToCharacter(ATC_Projectile* Projectile, float& TotalDamage)
+{
+	ATC_DonutPlayer* DonutPlayer = Cast<ATC_DonutPlayer>(this);
+
+	if (DonutPlayer)
+	{
+		// if the player was hit
+		TotalDamage = StatusComponent->CalculateAmmountOfDamageToPlayer(Projectile);
+	}
+	else
+	{
+		// if an enemy was hit
+		TotalDamage = StatusComponent->CalculateAmmountOfDamageToEnemy(Projectile);
+	}
+}
+
+/*
+* Use counter attack depending on characters skin
+*/
+void ATC_BaseCharacter::UseCounterAttack()
+{
+	switch (CharacterSkin)
+	{
+		case ESkin::Fire:
+			CounterFireAttackToPlantProjectile();
+			break;
+		case ESkin::Water:
+			CounterWaterAttackToFireProjectile();
+			break;
+		case ESkin::Plant:
+			CounterPlantAttackToWaterProjectile();
+			break;
+	}
+}
+
+/*
+* Create timer to make damage through time
+*/
+void ATC_BaseCharacter::MakeDamageThroughTime()
+{
+	// we need a timer delegate because the function to call has input parameters
+	FTimerDelegate FireBurnDamageDelegate = FTimerDelegate::CreateUObject(
+		this,
+		&ATC_BaseCharacter::MakeBurningDamage,
+		1.f
+	);
+	GetWorldTimerManager().SetTimer(FireBurnDamageTimer, FireBurnDamageDelegate, 1.0f, true);
+}
+
+/*
+* Make damage to this actor
+*/
+void ATC_BaseCharacter::MakeBurningDamage(float Damage)
+{
+	// if the time of burning is not done
+	if (BurningTimeCounter < BurningTimeMax)
+	{
+		AController* ControllerInstigator = GetInstigatorController();
+		if (ControllerInstigator)
+		{
+			// apply the damage to the other actor
+			UGameplayStatics::ApplyDamage(this, Damage, ControllerInstigator, this, UDamageType::StaticClass());
+
+		}
+		BurningTimeCounter++;
+	}
+	else
+	{
+		// clear burning timer
+		GetWorldTimerManager().ClearTimer(FireBurnDamageTimer);
+		BurningTimeCounter = 0;
+	}
+	
 }

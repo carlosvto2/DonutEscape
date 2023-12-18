@@ -36,18 +36,32 @@ public:
 
 	// Set that the health component is a shield
 	void SetComponentAsShield(bool Value);
+
+	void ToggleVisibilityHealthWidget(bool Visible);
 		
 private:
-	// if the health component is a shield
-	bool IsShield = false;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Component", meta = (AllowPrivateAccess = "true"))
+		TSubclassOf<UTC_WidgetComponent> DamageWidgetClass;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Component", meta = (AllowPrivateAccess = "true"))
+		TSubclassOf<UTC_WidgetComponent> HealthWidgetClass;
+
+
+	UTC_WidgetComponent* EnemyHealthWidgetComponent;
 
 	UPROPERTY(EditAnywhere)
 		float MaxHealth = 100.0f;
+
+	// if the health component is a shield
+	bool IsShield = false;
 	
 	float Health = 0.0f;
+	bool CharacterDead = false;
 
 	ATC_GameMode* DonutGameMode;
 
 	UFUNCTION() // Delegate function
 		void DamageTaken(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* Instigator, AActor* DamageCauser);
+	
+
+	void CreateDamageWidgetComponent(float Damage, FLinearColor DamageColor);
 };

@@ -37,11 +37,11 @@ void ATC_MagicBox::PickUp()
 	UTC_HealthComponent* PlayerHealth = Donut->GetHealthComponent();
 	
 	// Player is full health
-	/*if (PlayerHealth->GetHealth() == PlayerHealth->GetMaxHealth())
+	if (PlayerHealth->GetHealth() == PlayerHealth->GetMaxHealth())
 	{
 		DonutGameMode->ShowHelpTextWidget("Player must not be full health to use the stone");
 		return;
-	}*/
+	}
 
 	//Rotate character
 	DonutGameMode->HandleMapRotation();

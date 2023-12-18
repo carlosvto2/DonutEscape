@@ -17,7 +17,7 @@ class ROGUELIKE_API ATC_EnemyTurret : public ATC_BaseCharacter
 	GENERATED_BODY()
 	
 public:
-	ATC_EnemyTurret();
+	ATC_EnemyTurret(const FObjectInitializer& OI);
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -47,7 +47,20 @@ private:
 	UPROPERTY(EditAnywhere, Category = "DestroyDelay")
 		float FireRate = 2.0f;
 
+	UFUNCTION() // Delegate
+		void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
+	void Fire();
+	void SetMaterials();
+
+	TSubclassOf<ATC_Projectile> ProjectileUsing;
+
 	AAIController* EnemyTurretController;
 	ATC_DonutPlayer* Donut;
 	FTimerHandle FireRateTimerHandle;
+
+	// counter attacks
+	virtual void CounterWaterAttackToFireProjectile() override;
+	virtual void CounterFireAttackToPlantProjectile() override;
+	virtual void CounterPlantAttackToWaterProjectile() override;
 };

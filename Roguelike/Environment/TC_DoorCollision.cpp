@@ -28,5 +28,5 @@ void UTC_DoorCollision::OnBeginOverlap(UPrimitiveComponent* OverlappedComp, AAct
   if (SphereComponent)
     return;
 
-  DonutGameMode->MovePlayerToRoom(Other, this);
+  //DonutGameMode->MovePlayerToRoom(Other, this);
 }

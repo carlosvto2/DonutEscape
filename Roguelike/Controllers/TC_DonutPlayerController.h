@@ -15,7 +15,7 @@ class ROGUELIKE_API ATC_DonutPlayerController : public APlayerController
 	GENERATED_BODY()
 	
 public:
-	void SetPlayerEnabledState(bool bPlayerEnabled);
+	void SetPlayerEnabledState(bool bPlayerEnabled, bool bCollisionEnabled);
 	void Move(FVector LocationToMove);
 	bool GetIfPlayerAutomaticallyMoving() const { return PlayerAutomaticallyMoving; }
 

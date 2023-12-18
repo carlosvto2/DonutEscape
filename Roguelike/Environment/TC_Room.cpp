@@ -239,6 +239,7 @@ void ATC_Room::ChangeWallMaterialsAfterRotation(USoundWave* MoveRoomSound, int T
 void ATC_Room::BeginPlay()
 {
 	Super::BeginPlay();
+	BossCanBeInThisRoom = true;
 	AllEnemiesKilled = false;
 	PartWallsWithTransparentMaterial = 0; // bottom has transparent materials at the beginning
 
@@ -257,7 +258,8 @@ void ATC_Room::Tick(float DeltaTime)
 void ATC_Room::HideRoomAndElements(bool bShow)
 {
 	// show room in game
-	SetActorHiddenInGame(bShow);
+	RoomElements->SetVisibility(!bShow, true);
+
 	// if any final door in the room, show it
 	if (FinalDoor)
 	{

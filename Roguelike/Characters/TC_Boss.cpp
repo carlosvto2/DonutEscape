@@ -12,8 +12,9 @@
 #include "../TC_GameMode.h"
 #include "../Actors/TC_Projectile.h"
 #include "../Actors/Collectables/TC_Collectable.h"
+#include "Components/SphereComponent.h"
 
-ATC_Boss::ATC_Boss()
+ATC_Boss::ATC_Boss(const FObjectInitializer& OI) : Super(OI)
 {
   BaseTurret = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Base Boss"));
   BaseTurret->SetupAttachment(GetMesh());
@@ -28,6 +29,10 @@ ATC_Boss::ATC_Boss()
   SecondProjectileSpawnPoint->SetupAttachment(RootComponent);
   ThirdProjectileSpawnPoint = CreateDefaultSubobject<USceneComponent>(TEXT("Third Projectile Spawn Point"));
   ThirdProjectileSpawnPoint->SetupAttachment(RootComponent);
+
+  SphereToCheckPlayerDistance = CreateDefaultSubobject<USphereComponent>(TEXT("Sphere Player Detection"));
+  SphereToCheckPlayerDistance->SetupAttachment(RootComponent);
+  SphereToCheckPlayerDistance->SetSphereRadius(200.0f);
 }
 
 // Called every frame
@@ -61,12 +66,6 @@ void ATC_Boss::HandleDestruction()
   GetWorldTimerManager().SetTimer(EnemyDestroyTimer, this, &ATC_Boss::DestroyEnemy, DestroyDelay, false);
 
   SpawnCollectable();
-
-  if (!RoomOwner)
-    return;
-
-  RoomOwner->NoBossInRoom();
-  RoomOwner->CheckIfLastEnemy(this);
 }
 
 // Called when the game starts or when spawned
@@ -85,24 +84,27 @@ void ATC_Boss::BeginPlay()
   SpawnDefaultController();
   EnemyTurretController = Cast<AAIController>(GetController());
 
+  // when the player enters the sphere component
+  SphereToCheckPlayerDistance->OnComponentBeginOverlap.AddDynamic(this, &ATC_Boss::OnPlayerBeginOverlap);
+
   // SetTimer
   GetWorldTimerManager().SetTimer(FireRateTimerHandle, this, &ATC_Boss::Fire, FireRate, true, FirstFireDelay);
 }
 
 void ATC_Boss::Fire()
 {
-  if (!bCanFire || !bCharacterActive || !ProjectileClass)
+  if (!bCanFire || !bCharacterActive || !FireProjectileClass)
     return;
 
-  ATC_Projectile* Projectile = GetWorld()->SpawnActor<ATC_Projectile>(ProjectileClass,
+  ATC_Projectile* Projectile = GetWorld()->SpawnActor<ATC_Projectile>(FireProjectileClass,
     ProjectileSpawnPoint->GetComponentLocation(),
     ProjectileSpawnPoint->GetComponentRotation());
   Projectile->SetActorScale3D(ProjectileScale);
-  ATC_Projectile* Projectile2 = GetWorld()->SpawnActor<ATC_Projectile>(ProjectileClass,
+  ATC_Projectile* Projectile2 = GetWorld()->SpawnActor<ATC_Projectile>(FireProjectileClass,
     SecondProjectileSpawnPoint->GetComponentLocation(),
     SecondProjectileSpawnPoint->GetComponentRotation());
   Projectile2->SetActorScale3D(ProjectileScale);
-  ATC_Projectile* Projectile3 = GetWorld()->SpawnActor<ATC_Projectile>(ProjectileClass,
+  ATC_Projectile* Projectile3 = GetWorld()->SpawnActor<ATC_Projectile>(FireProjectileClass,
     ThirdProjectileSpawnPoint->GetComponentLocation(),
     ThirdProjectileSpawnPoint->GetComponentRotation());
   Projectile3->SetActorScale3D(ProjectileScale);

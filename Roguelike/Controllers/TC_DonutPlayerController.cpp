@@ -6,7 +6,7 @@
 #include "../Characters/TC_DonutPlayer.h"
 #include "Components/CapsuleComponent.h"
 
-void ATC_DonutPlayerController::SetPlayerEnabledState(bool bPlayerEnabled)
+void ATC_DonutPlayerController::SetPlayerEnabledState(bool bPlayerEnabled, bool bCollisionEnabled)
 {
   ATC_DonutPlayer* Donut = Cast<ATC_DonutPlayer>(GetPawn());
   // enable or disable input
@@ -14,20 +14,22 @@ void ATC_DonutPlayerController::SetPlayerEnabledState(bool bPlayerEnabled)
   {
     GetPawn()->EnableInput(this);
     PlayerAutomaticallyMoving = false;
-    if (Donut)
+    if (Donut && bCollisionEnabled)
     {
-      Donut->GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_GameTraceChannel1, ECollisionResponse::ECR_Block);
+      Donut->GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_GameTraceChannel4, ECollisionResponse::ECR_Block);
       Donut->GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_GameTraceChannel2, ECollisionResponse::ECR_Block);
+      Donut->GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Block);
     }
   }
   else
   {
     GetPawn()->DisableInput(this);
     PlayerAutomaticallyMoving = true;
-    if (Donut)
+    if (Donut && !bCollisionEnabled)
     {
-      Donut->GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_GameTraceChannel1, ECollisionResponse::ECR_Ignore);
+      Donut->GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_GameTraceChannel4, ECollisionResponse::ECR_Ignore);
       Donut->GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_GameTraceChannel2, ECollisionResponse::ECR_Ignore);
+      Donut->GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Ignore);
     }
   }
 
@@ -38,6 +40,6 @@ void ATC_DonutPlayerController::SetPlayerEnabledState(bool bPlayerEnabled)
 
 void ATC_DonutPlayerController::Move(FVector LocationToMove)
 {
-  SetPlayerEnabledState(false);
+  SetPlayerEnabledState(false, false);
   UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, LocationToMove);
 }

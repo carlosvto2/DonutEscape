@@ -16,12 +16,27 @@ class ROGUELIKE_API ATC_Collectable : public AActor
 	GENERATED_BODY()
 	
 public:	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Widget")
+		USceneComponent* WidgetPosition;
 	// Sets default values for this actor's properties
 	ATC_Collectable();
+	virtual void BeginPlay() override;
+
+	void CollectableWidgetVisibility(bool Visible);
 
 protected:
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Collectable Info", meta = (AllowPrivateAccess = "true"))
+		TSubclassOf<UTC_WidgetComponent> CollectableInfoWidgetClass;
+
+	UPROPERTY(VisibleAnywhere, Category = "Collectable Info")
+		UTC_WidgetComponent* CollectableWidgetComponent;
+	UPROPERTY(EditAnywhere, Category = "Collectable Info")
+		FText CollectableInfo;
+
 	UStaticMeshComponent* GetCollectableMesh() const { return CollectableMesh; };
 	ATC_DonutPlayer* Donut;
+	
 
 public:	
 	// Called every frame
@@ -42,6 +57,9 @@ private:
 		UStaticMeshComponent* CollectableMesh;
 	UPROPERTY(EditDefaultsOnly, Category = "Illumination")
 		UPointLightComponent* Light;
+
+	UPROPERTY(EditDefaultsOnly, Category = "WidgetPosition")
+		float WidgetPositionZValue = 200.f;
 
 	bool Active = true;
 

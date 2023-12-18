@@ -16,6 +16,7 @@ class ROGUELIKE_API ATC_ChaseEnemy : public ATC_BaseCharacter
 	GENERATED_BODY()
 
 public:
+	ATC_ChaseEnemy(const FObjectInitializer& OI);
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
@@ -27,6 +28,7 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
 	
 private:
 	UPROPERTY(EditAnywhere, Category = "Sound")
@@ -38,10 +40,15 @@ private:
 	UFUNCTION() // Delegate
 		void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
+	
+	void SetMaterials();
+
 	void ChasePlayer();
 
 	AAIController* EnemyChaseController;
 	ATC_DonutPlayer* Donut;
 	UPROPERTY(EditAnywhere)
 		float Damage = 25.0f;
+
+	bool ChaseEnemyDestroying = false;
 };
